@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# 虚拟环境与依赖目录（不应入库）
+backend/.venv/
+frontend/node_modules/
+
+# 环境变量与密钥
+.env
+.env.*
+!.env.example
+
+# 日志
+*.log
+
+# 工具 / 临时状态
+.omo/
+.codegraph/
+.superpowers/
+.DS_Store
