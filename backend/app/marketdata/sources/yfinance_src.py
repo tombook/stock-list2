@@ -7,12 +7,11 @@ via asyncio.to_thread. This keeps the FastAPI event loop unblocked.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 
 import yfinance
 
 from app.core.errors import NotFoundError, UpstreamError
-from app.marketdata.models import AssetClass, Bar, Bars, Fundamentals, Quote
+from app.marketdata.models import AssetClass, Bar, Bars, CorporateAction, Fundamentals, Quote
 
 _NAME = "yfinance"
 
@@ -141,3 +140,47 @@ async def fundamentals(symbol: str) -> Fundamentals:
         raise
     except Exception as exc:
         raise UpstreamError(f"{_NAME} fundamentals failed for {symbol}: {exc}") from exc
+
+
+async def actions(symbol: str) -> list[CorporateAction]:
+    def _fetch() -> list[CorporateAction]:
+        ticker = yfinance.Ticker(symbol)
+        result: list[CorporateAction] = []
+
+        splits = ticker.splits
+        if splits is not None and not splits.empty:
+            for ts, ratio in splits.items():
+                result.append(
+                    CorporateAction(
+                        date=ts.to_pydatetime(),
+                        type="split",
+                        value=float(ratio),
+                        symbol=symbol.upper(),
+                        source=_NAME,
+                    )
+                )
+
+        dividends = ticker.dividends
+        if dividends is not None and not dividends.empty:
+            for ts, amount in dividends.items():
+                result.append(
+                    CorporateAction(
+                        date=ts.to_pydatetime(),
+                        type="dividend",
+                        value=float(amount),
+                        symbol=symbol.upper(),
+                        source=_NAME,
+                    )
+                )
+
+        if not result:
+            raise NotFoundError(f"no corporate actions for {symbol}")
+        result.sort(key=lambda a: a.date, reverse=True)
+        return result
+
+    try:
+        return await asyncio.to_thread(_fetch)
+    except (NotFoundError, UpstreamError):
+        raise
+    except Exception as exc:
+        raise UpstreamError(f"{_NAME} actions failed for {symbol}: {exc}") from exc

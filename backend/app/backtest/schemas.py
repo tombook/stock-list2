@@ -60,3 +60,44 @@ class BacktestResponse(BaseModel):
     equity: list[EquityPoint]
     benchmark_equity: list[EquityPoint] | None = None
     alpha: float | None = None
+
+
+class ParamRange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    values: list[StrategyParam]
+
+
+class OptimizeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    symbol: str = Field(min_length=1)
+    strategy: str
+    param_ranges: list[ParamRange] = Field(min_length=1)
+    timeframe: str = "1d"
+    limit: int = Field(default=252, ge=50, le=1000)
+    cost_bps: float = Field(default=0.0, ge=0.0)
+    target_metric: str = Field(
+        default="sharpe", description="Sort results by this metric (sharpe/total_return/max_drawdown)"
+    )
+
+
+class OptimizeRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    params: dict[str, StrategyParam]
+    total_return: float
+    sharpe: float
+    max_drawdown: float
+    n_trades: int
+
+
+class OptimizeResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    symbol: str
+    strategy: str
+    target_metric: str
+    rows: list[OptimizeRow]
+    best: OptimizeRow | None

@@ -89,6 +89,13 @@ async def _screen_stocks(args: dict[str, Any]) -> dict[str, Any]:
     return {"matches": matches, "total_checked": len(symbols), "matched": len(matches)}
 
 
+async def _get_sentiment(args: dict[str, Any]) -> dict[str, Any]:
+    from app.sentiment.service import analyze_sentiment
+
+    result = await analyze_sentiment(str(args["symbol"]))
+    return result.model_dump(mode="json")
+
+
 async def _run_backtest(args: dict[str, Any]) -> dict[str, Any]:
     req = BacktestRequest(
         symbol=str(args["symbol"]),
@@ -239,6 +246,12 @@ def registry() -> dict[str, Tool]:
             "Screen stocks by fundamental criteria (P/E max, sector, market cap).",
             _SCREEN_PARAMS,
             _screen_stocks,
+        ),
+        "get_sentiment": Tool(
+            "get_sentiment",
+            "Get market sentiment for a symbol based on recent news headlines.",
+            _QUOTE_PARAMS,
+            _get_sentiment,
         ),
         "run_backtest": Tool(
             "run_backtest",

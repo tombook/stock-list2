@@ -26,3 +26,17 @@ async def get_bars(
 @router.get("/fundamentals/{symbol}")
 async def get_fundamentals(symbol: str) -> dict:
     return (await market_service.get_fundamentals(symbol)).model_dump(mode="json")
+
+
+@router.get("/actions/{symbol}")
+async def get_actions(symbol: str) -> list[dict]:
+    actions = await market_service.get_actions(symbol)
+    return [a.model_dump(mode="json") for a in actions]
+
+
+@router.get("/sentiment/{symbol}")
+async def get_sentiment(symbol: str) -> dict:
+    from app.sentiment.service import analyze_sentiment
+
+    result = await analyze_sentiment(symbol)
+    return result.model_dump(mode="json")

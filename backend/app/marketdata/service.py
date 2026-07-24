@@ -10,7 +10,7 @@ from __future__ import annotations
 from app.core.logging import get_logger
 from app.marketdata import registry
 from app.marketdata.cache import TTLCache
-from app.marketdata.models import Bars, Fundamentals, Quote
+from app.marketdata.models import Bars, CorporateAction, Fundamentals, Quote
 
 _log = get_logger(__name__)
 _quote_cache: TTLCache[Quote] = TTLCache(ttl_seconds=15.0)
@@ -81,3 +81,7 @@ async def get_fundamentals(symbol: str) -> Fundamentals:
     fund = await registry.fundamentals(key)
     _fundamentals_cache.set(key, fund)
     return fund
+
+
+async def get_actions(symbol: str) -> list[CorporateAction]:
+    return await registry.actions(symbol.upper())

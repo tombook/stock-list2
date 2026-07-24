@@ -64,3 +64,13 @@ class Fundamentals(BaseModel):
     fifty_two_week_high: float | None = None
     fifty_two_week_low: float | None = None
     source: str
+
+
+class CorporateAction(BaseModel):
+    """A corporate action event (split, dividend)."""
+
+    date: datetime
+    type: str  # "split" or "dividend"
+    value: float  # ratio for splits, amount for dividends
+    symbol: str
+    source: str

@@ -76,8 +76,14 @@ async def upsert_bars(session: AsyncSession, bars: Bars) -> None:
         for b in bars.bars:
             await session.execute(
                 stmt.bindparams(
-                    sym=bars.symbol, tf=bars.timeframe, ts=b.ts,
-                    o=b.open, h=b.high, l=b.low, c=b.close, v=b.volume,
+                    sym=bars.symbol,
+                    tf=bars.timeframe,
+                    ts=b.ts,
+                    o=b.open,
+                    h=b.high,
+                    l=b.low,
+                    c=b.close,
+                    v=b.volume,
                 )
             )
         await session.commit()

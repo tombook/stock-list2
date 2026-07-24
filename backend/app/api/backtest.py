@@ -1,4 +1,5 @@
 """POST /api/backtest — run a backtest, persist the result best-effort, return it.
+POST /api/backtest/optimize — grid search over strategy parameters.
 
 Persistence failure (e.g. a constraint violation) never blocks the response: the
 user still gets the computed metrics. The session comes from the standard
@@ -13,7 +14,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.backtest.schemas import BacktestRequest, BacktestResponse
+from app.backtest.optimizer import run_optimize
+from app.backtest.schemas import BacktestRequest, BacktestResponse, OptimizeRequest, OptimizeResult
 from app.backtest.service import run_backtest
 from app.core.db import get_session
 from app.core.logging import get_logger
@@ -38,3 +40,8 @@ async def backtest(
         await session.rollback()
         _log.warning("backtest_run_persist_failed", symbol=req.symbol)
     return resp
+
+
+@router.post("/backtest/optimize", response_model=OptimizeResult)
+async def optimize(req: OptimizeRequest) -> OptimizeResult:
+    return await run_optimize(req)
