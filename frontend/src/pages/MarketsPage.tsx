@@ -3,10 +3,12 @@ import { useMarketStore } from "../stores/marketStore";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { PriceChart } from "../components/charts/PriceChart";
 
 export function MarketsPage() {
   const { symbol, quote, bars, loading, error, lookup } = useMarketStore();
   const [draft, setDraft] = useState(symbol);
+  const [smaPeriods, setSmaPeriods] = useState<number[]>([]);
 
   useEffect(() => {
     lookup(symbol);
@@ -16,6 +18,12 @@ export function MarketsPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (draft.trim()) lookup(draft.trim());
+  };
+
+  const toggleSma = (period: number) => {
+    setSmaPeriods((prev) =>
+      prev.includes(period) ? prev.filter((p) => p !== period) : [...prev, period],
+    );
   };
 
   return (
@@ -52,6 +60,31 @@ export function MarketsPage() {
             )}
           </div>
           <div className="mt-1 text-xs text-slate-400">source: {quote.source}</div>
+        </Card>
+      )}
+
+      {bars && bars.bars.length > 0 && (
+        <Card>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Price ({bars.timeframe})</h2>
+            <div className="flex gap-1">
+              {[10, 20, 50].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => toggleSma(p)}
+                  className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                    smaPeriods.includes(p)
+                      ? "bg-brand/10 text-brand"
+                      : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  SMA {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <PriceChart bars={bars.bars} smaPeriods={smaPeriods} />
         </Card>
       )}
 
