@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useRunsStore } from "../stores/runsStore";
 import { Card } from "../components/ui/Card";
 import { EquityChart } from "../components/charts/EquityChart";
+import { TearSheet } from "../components/charts/TearSheet";
 
 function pct(v: number): string {
   return `${v >= 0 ? "+" : ""}${(v * 100).toFixed(2)}%`;
@@ -89,6 +90,10 @@ export function RunDetailPage() {
       <Card>
         <h2 className="mb-2 text-lg font-semibold">Equity Curve</h2>
         <EquityChart equity={detail.equity} />
+      </Card>
+
+      <Card>
+        <TearSheet equity={detail.equity} />
       </Card>
     </div>
   );

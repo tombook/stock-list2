@@ -4,11 +4,15 @@ import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { PriceChart } from "../components/charts/PriceChart";
+import { RSIPanel } from "../components/charts/RSIPanel";
+import { MACDPanel } from "../components/charts/MACDPanel";
 
 export function MarketsPage() {
   const { symbol, quote, bars, loading, error, lookup } = useMarketStore();
   const [draft, setDraft] = useState(symbol);
   const [smaPeriods, setSmaPeriods] = useState<number[]>([]);
+  const [showRSI, setShowRSI] = useState(false);
+  const [showMACD, setShowMACD] = useState(false);
 
   useEffect(() => {
     lookup(symbol);
@@ -82,9 +86,41 @@ export function MarketsPage() {
                   SMA {p}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setShowRSI((v) => !v)}
+                className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                  showRSI
+                    ? "bg-brand/10 text-brand"
+                    : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                RSI
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMACD((v) => !v)}
+                className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                  showMACD
+                    ? "bg-brand/10 text-brand"
+                    : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                MACD
+              </button>
             </div>
           </div>
           <PriceChart bars={bars.bars} smaPeriods={smaPeriods} />
+          {showRSI && (
+            <div className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-800">
+              <RSIPanel bars={bars.bars} />
+            </div>
+          )}
+          {showMACD && (
+            <div className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-800">
+              <MACDPanel bars={bars.bars} />
+            </div>
+          )}
         </Card>
       )}
 

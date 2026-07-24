@@ -4,6 +4,7 @@ import type { EquityPoint } from "../../types/backtest";
 
 interface Props {
   equity: EquityPoint[];
+  benchmarkEquity?: EquityPoint[] | null;
   className?: string;
 }
 
@@ -26,7 +27,7 @@ function shortDate(iso: string): string {
 }
 
 /** 纯 SVG 权益曲线——折线 + 渐变填充 + 水平网格 + 坐标标签。跟随当前文本色，兼容 dark mode。 */
-export function EquityChart({ equity, className }: Props) {
+export function EquityChart({ equity, benchmarkEquity, className }: Props) {
   const gradId = useId();
   const n = equity.length;
 
@@ -42,6 +43,9 @@ export function EquityChart({ equity, className }: Props) {
   const innerH = VB_H - PAD.top - PAD.bottom;
 
   const values = equity.map((p) => p.equity);
+  if (benchmarkEquity) {
+    values.push(...benchmarkEquity.map((p) => p.equity));
+  }
   let min = Math.min(...values);
   let max = Math.max(...values);
   if (min === max) {
@@ -102,6 +106,23 @@ export function EquityChart({ equity, className }: Props) {
       {/* 区域填充 + 折线 */}
       <path d={areaPath} fill={`url(#${gradId})`} />
       <path d={linePath} fill="none" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Benchmark 对比线（虚线灰色） */}
+      {benchmarkEquity && benchmarkEquity.length >= 2 && (() => {
+        const bn = benchmarkEquity.length;
+        const bx = (i: number) => PAD.left + (i / (bn - 1)) * innerW;
+        const bPath = benchmarkEquity
+          .map((p, i) => `${i === 0 ? "M" : "L"}${bx(i).toFixed(2)},${y(p.equity).toFixed(2)}`)
+          .join(" ");
+        return <path d={bPath} fill="none" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.8} />;
+      })()}
+
+      {/* Benchmark 图例 */}
+      {benchmarkEquity && benchmarkEquity.length >= 2 && (
+        <text x={VB_W - PAD.right} y={PAD.top + 4} textAnchor="end" className="fill-slate-400 text-[10px]">
+          --- benchmark
+        </text>
+      )}
 
       {/* X 轴首尾日期标签 */}
       <text x={PAD.left} y={VB_H - 8} textAnchor="start" className="fill-slate-400 text-[11px]">

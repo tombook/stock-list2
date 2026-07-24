@@ -171,8 +171,15 @@ export function BacktestPage() {
           </Card>
 
           <Card>
-            <h2 className="mb-2 text-lg font-semibold">Equity Curve</h2>
-            <EquityChart equity={result.equity} />
+            <div className="mb-2 flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold">Equity Curve</h2>
+              {result.alpha !== null && result.alpha !== undefined && (
+                <span className={`text-sm font-medium ${result.alpha >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                  Alpha: {result.alpha >= 0 ? "+" : ""}{(result.alpha * 100).toFixed(2)}%
+                </span>
+              )}
+            </div>
+            <EquityChart equity={result.equity} benchmarkEquity={result.benchmark_equity} />
           </Card>
         </>
       )}
