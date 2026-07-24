@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agent, health, market
+from app.api import agent, backtest, health, market
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.settings import get_settings
@@ -37,6 +37,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(market.router)
     app.include_router(agent.router)
+    app.include_router(backtest.router)
     return app
 
 
