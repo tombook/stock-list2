@@ -28,4 +28,6 @@ frontend/node_modules/
 .omo/
 .codegraph/
 .superpowers/
+.playwright-mcp/
+*.png
 .DS_Store

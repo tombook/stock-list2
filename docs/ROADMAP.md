@@ -27,18 +27,19 @@ is prioritized by leverage: each item unblocks the next.
 > project (zhipu) is expired — both endpoints return 401. Any OpenAI-compatible
 > provider works (OpenAI, DeepSeek, OpenRouter, Moonshot, a fresh Zhipu key, …).
 
-## Next — v0.2 one good backtester
+## Done — v0.2 one good backtester
 
-- [ ] `app/backtest/`: a single vectorized engine (pandas/numpy). One engine, not
+- [x] `app/backtest/`: a single vectorized engine (pandas/numpy). One engine, not
       nine. Strategy = a pure function `bars → signals`.
-- [ ] Metrics: total return, CAGR, Sharpe, max drawdown, win rate.
-- [ ] `POST /api/backtest` and a `run_backtest` agent tool.
+- [x] Metrics: total return, CAGR, Sharpe, max drawdown, win rate.
+- [x] `POST /api/backtest` and a `run_backtest` agent tool.
 
-## Then — v0.3 persistence + UI wiring
+## Done — v0.3 persistence + UI wiring
 
-- [ ] First ORM domain (watchlist or runs) via async SQLAlchemy; introduce Alembic.
-- [ ] Frontend: Analyze page (chat + streaming), chart (quote/bars), backtest panel.
-      Replaces the placeholder watchlist page in the current shell.
+- [x] First ORM domain (runs) via async SQLAlchemy; Alembic introduced (`migrations/`).
+      `GET /api/runs`, `GET /api/runs/{id}`, best-effort persist on `POST /api/backtest`.
+- [x] Frontend: Analyze page (chat + SSE streaming), backtest panel, runs history
+      list + detail pages, candlestick price chart on Markets page.
 
 ## Deliberately out of scope for v1
 
