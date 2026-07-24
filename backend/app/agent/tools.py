@@ -42,6 +42,53 @@ async def _get_fundamentals(args: dict[str, Any]) -> dict[str, Any]:
     return fund.model_dump(mode="json")
 
 
+async def _compare_stocks(args: dict[str, Any]) -> dict[str, Any]:
+    symbols = [str(s) for s in args["symbols"]]
+    results = []
+    for sym in symbols[:6]:
+        try:
+            fund = await market_service.get_fundamentals(sym)
+            results.append(fund.model_dump(mode="json"))
+        except Exception:
+            results.append({"symbol": sym.upper(), "error": "data unavailable"})
+    return {"comparison": results}
+
+
+async def _screen_stocks(args: dict[str, Any]) -> dict[str, Any]:
+    import asyncio
+
+    symbols = [str(s) for s in args["symbols"]]
+    pe_max = args.get("pe_max")
+    sector = args.get("sector")
+    min_market_cap = args.get("min_market_cap")
+
+    async def _check(sym: str) -> dict[str, Any] | None:
+        try:
+            fund = await market_service.get_fundamentals(sym)
+        except Exception:
+            return None
+        if pe_max is not None and fund.trailing_pe is not None:
+            if fund.trailing_pe > pe_max:
+                return None
+        if sector is not None and fund.sector:
+            if sector.lower() not in fund.sector.lower():
+                return None
+        if min_market_cap is not None and fund.market_cap is not None:
+            if fund.market_cap < min_market_cap:
+                return None
+        return {
+            "symbol": fund.symbol,
+            "name": fund.name,
+            "sector": fund.sector,
+            "trailing_pe": fund.trailing_pe,
+            "market_cap": fund.market_cap,
+        }
+
+    tasks = [_check(s) for s in symbols[:10]]
+    matches = [r for r in await asyncio.gather(*tasks) if r is not None]
+    return {"matches": matches, "total_checked": len(symbols), "matched": len(matches)}
+
+
 async def _run_backtest(args: dict[str, Any]) -> dict[str, Any]:
     req = BacktestRequest(
         symbol=str(args["symbol"]),
@@ -95,6 +142,42 @@ _FUNDAMENTALS_PARAMS = {
     "additionalProperties": False,
 }
 
+_COMPARE_PARAMS = {
+    "type": "object",
+    "properties": {
+        "symbols": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "2-6 tickers to compare, e.g. [\"AAPL\", \"MSFT\", \"GOOG\"]",
+            "minItems": 2,
+            "maxItems": 6,
+        }
+    },
+    "required": ["symbols"],
+    "additionalProperties": False,
+}
+
+_SCREEN_PARAMS = {
+    "type": "object",
+    "properties": {
+        "symbols": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Tickers to screen, e.g. [\"AAPL\", \"MSFT\", \"TSLA\"]",
+            "minItems": 1,
+            "maxItems": 10,
+        },
+        "pe_max": {"type": "number", "description": "Maximum trailing P/E ratio"},
+        "sector": {"type": "string", "description": "Sector filter (case-insensitive substring)"},
+        "min_market_cap": {
+            "type": "number",
+            "description": "Minimum market cap in USD (e.g. 1e12 for $1T)",
+        },
+    },
+    "required": ["symbols"],
+    "additionalProperties": False,
+}
+
 _BACKTEST_PARAMS = {
     "type": "object",
     "properties": {
@@ -144,6 +227,18 @@ def registry() -> dict[str, Tool]:
             "Get company fundamentals for a market symbol (P/E, market cap, sector, etc.).",
             _FUNDAMENTALS_PARAMS,
             _get_fundamentals,
+        ),
+        "compare_stocks": Tool(
+            "compare_stocks",
+            "Compare fundamentals of up to 6 stocks side by side.",
+            _COMPARE_PARAMS,
+            _compare_stocks,
+        ),
+        "screen_stocks": Tool(
+            "screen_stocks",
+            "Screen stocks by fundamental criteria (P/E max, sector, market cap).",
+            _SCREEN_PARAMS,
+            _screen_stocks,
         ),
         "run_backtest": Tool(
             "run_backtest",

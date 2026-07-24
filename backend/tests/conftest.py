@@ -47,6 +47,7 @@ async def _reset_engine() -> AsyncIterator[None]:
             async with db.get_session_factory()() as cleanup:
                 await cleanup.execute(text("DELETE FROM runs"))
                 await cleanup.execute(text("DELETE FROM watchlist_items"))
+                await cleanup.execute(text("DELETE FROM bars_cache"))
                 await cleanup.commit()
         except SQLAlchemyError:
             pass  # tables may not exist (e.g. pure unit tests)
@@ -71,6 +72,7 @@ async def db_session(_reset_engine: None) -> AsyncIterator[AsyncSession]:
     async with factory() as cleanup:
         await cleanup.execute(text("DELETE FROM runs"))
         await cleanup.execute(text("DELETE FROM watchlist_items"))
+        await cleanup.execute(text("DELETE FROM bars_cache"))
         await cleanup.commit()
 
 
