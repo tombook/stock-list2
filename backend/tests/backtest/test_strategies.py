@@ -25,12 +25,12 @@ def _bars(closes: list[float]) -> pd.DataFrame:
 def test_sma_cross_flats_during_warmup_then_signals_above() -> None:
     bars = _bars([1, 2, 3, 4, 5, 6, 7, 8])  # uptrend
     sig = sma_cross(bars, fast=2, slow=4)
-    assert sig.dtype.kind in {"i", "u"}
+    assert sig.dtype.kind == "f"
     # First `slow-1` = 3 bars are warmup → flat 0
-    assert sig.iloc[:3].tolist() == [0, 0, 0]
+    assert sig.iloc[:3].tolist() == [0.0, 0.0, 0.0]
     # Once both SMAs exist and fast > slow in a clean uptrend → 1
-    assert sig.iloc[-1] == 1
-    assert set(sig.unique()).issubset({0, 1})
+    assert sig.iloc[-1] == 1.0
+    assert set(sig.unique()).issubset({0.0, 1.0})
 
 
 def test_sma_cross_signal_length_matches_bars() -> None:
@@ -42,16 +42,15 @@ def test_sma_cross_signal_length_matches_bars() -> None:
 def test_momentum_long_when_past_close_below_current() -> None:
     bars = _bars([5, 5, 5, 5, 10])  # close[4]=10 > close[4-2]=5
     sig = momentum(bars, lookback=2)
-    assert set(sig.unique()).issubset({0, 1})
-    # Warmup: lookback=2 → first 2 bars are 0
-    assert sig.iloc[:2].tolist() == [0, 0]
-    assert sig.iloc[-1] == 1
+    assert set(sig.unique()).issubset({0.0, 1.0})
+    assert sig.iloc[:2].tolist() == [0.0, 0.0]
+    assert sig.iloc[-1] == 1.0
 
 
 def test_buy_hold_is_always_one() -> None:
     bars = _bars([1, 2, 3])
     sig = buy_hold(bars)
-    assert sig.tolist() == [1, 1, 1]
+    assert sig.tolist() == [1.0, 1.0, 1.0]
 
 
 def test_registry_has_three_strategies_with_schemas() -> None:

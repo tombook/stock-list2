@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agent, backtest, health, market
+from app.api import agent, backtest, health, market, runs, watchlist
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.settings import get_settings
@@ -38,6 +38,8 @@ def create_app() -> FastAPI:
     app.include_router(market.router)
     app.include_router(agent.router)
     app.include_router(backtest.router)
+    app.include_router(runs.router)
+    app.include_router(watchlist.router)
     return app
 
 

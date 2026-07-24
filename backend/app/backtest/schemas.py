@@ -26,6 +26,9 @@ class BacktestRequest(BaseModel):
     timeframe: str = "1d"
     limit: int = Field(default=252, ge=50, le=1000)
     cost_bps: float = Field(default=0.0, ge=0.0)
+    benchmark: str | None = Field(
+        default=None, description="Benchmark symbol (e.g. SPY) for alpha comparison"
+    )
 
 
 class Metrics(BaseModel):
@@ -55,3 +58,5 @@ class BacktestResponse(BaseModel):
     end: datetime
     metrics: Metrics
     equity: list[EquityPoint]
+    benchmark_equity: list[EquityPoint] | None = None
+    alpha: float | None = None

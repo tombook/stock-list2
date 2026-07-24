@@ -12,7 +12,7 @@ from datetime import datetime
 import yfinance
 
 from app.core.errors import NotFoundError, UpstreamError
-from app.marketdata.models import AssetClass, Bar, Bars, Quote
+from app.marketdata.models import AssetClass, Bar, Bars, Fundamentals, Quote
 
 _NAME = "yfinance"
 
@@ -77,7 +77,7 @@ async def bars(symbol: str, timeframe: str, limit: int) -> Bars:
             period = f"{max(limit, 1) * 31}d"
         else:
             period = f"{max(limit, 1)}d"
-        df = yfinance.Ticker(symbol).history(period=period, interval=interval)
+        df = yfinance.Ticker(symbol).history(period=period, interval=interval, auto_adjust=True)
         if df is None or df.empty:
             raise NotFoundError(f"no bars for {symbol}")
         df = df.tail(limit)
@@ -101,3 +101,43 @@ async def bars(symbol: str, timeframe: str, limit: int) -> Bars:
         raise
     except Exception as exc:
         raise UpstreamError(f"{_NAME} bars failed for {symbol}: {exc}") from exc
+
+
+# 仅提取 yfinance .info 中稳定存在的字段；缺失值统一为 None
+_INFO_FIELDS = {
+    "longName": "name",
+    "sector": "sector",
+    "industry": "industry",
+    "marketCap": "market_cap",
+    "trailingPE": "trailing_pe",
+    "forwardPE": "forward_pe",
+    "priceToBook": "price_to_book",
+    "dividendYield": "dividend_yield",
+    "beta": "beta",
+    "fiftyTwoWeekHigh": "fifty_two_week_high",
+    "fiftyTwoWeekLow": "fifty_two_week_low",
+}
+
+
+async def fundamentals(symbol: str) -> Fundamentals:
+    def _fetch() -> Fundamentals:
+        info = yfinance.Ticker(symbol).info
+        if not info:
+            raise NotFoundError(f"no fundamentals for {symbol}")
+        kwargs: dict[str, str | float | None] = {}
+        for src_key, dest_key in _INFO_FIELDS.items():
+            raw = info.get(src_key)
+            if raw is None:
+                kwargs[dest_key] = None
+            elif isinstance(raw, int | float):
+                kwargs[dest_key] = float(raw)
+            else:
+                kwargs[dest_key] = str(raw)
+        return Fundamentals(symbol=symbol.upper(), source=_NAME, **kwargs)  # type: ignore[arg-type]
+
+    try:
+        return await asyncio.to_thread(_fetch)
+    except (NotFoundError, UpstreamError):
+        raise
+    except Exception as exc:
+        raise UpstreamError(f"{_NAME} fundamentals failed for {symbol}: {exc}") from exc

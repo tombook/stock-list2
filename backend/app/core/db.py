@@ -17,8 +17,14 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from app.core.settings import get_settings
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Declarative base shared by every ORM model in the app."""
+
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None

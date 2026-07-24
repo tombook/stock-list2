@@ -21,3 +21,8 @@ async def get_bars(
     limit: int = Query(120, ge=1, le=1000),
 ) -> dict:
     return (await market_service.get_bars(symbol, timeframe, limit)).model_dump(mode="json")
+
+
+@router.get("/fundamentals/{symbol}")
+async def get_fundamentals(symbol: str) -> dict:
+    return (await market_service.get_fundamentals(symbol)).model_dump(mode="json")

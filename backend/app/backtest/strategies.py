@@ -1,6 +1,6 @@
-"""Built-in strategies — pure functions `(bars_df, **params) -> pd.Series[int]`.
+"""Built-in strategies — pure functions `(bars_df, **params) -> pd.Series[float]`.
 
-Each function returns a target-position series of {0,1} (long-only) aligned to
+Each function returns a target-position series of floats in [-1, +1] aligned to
 `bars.index`. The signal at bar `t` is known at bar `t`'s close; the engine
 shifts by one to avoid lookahead.
 """
@@ -41,9 +41,8 @@ def sma_cross(bars: pd.DataFrame, *, fast: int = 5, slow: int = 20) -> pd.Series
     close = bars["close"]
     fast_sma = close.rolling(fast, min_periods=fast).mean()
     slow_sma = close.rolling(slow, min_periods=slow).mean()
-    signal = (fast_sma > slow_sma).astype("int64")
-    # Warmup: NaN comparisons become False → 0 already; ensure dtype stable.
-    return pd.Series(signal.values, index=bars.index, dtype="int64", name="signal")
+    signal = (fast_sma > slow_sma).astype("float64")
+    return pd.Series(signal.values, index=bars.index, dtype="float64", name="signal")
 
 
 def momentum(bars: pd.DataFrame, *, lookback: int = 20) -> pd.Series:
@@ -51,14 +50,14 @@ def momentum(bars: pd.DataFrame, *, lookback: int = 20) -> pd.Series:
     lookback = _validate_int(lookback, "lookback", minimum=1)
     close = bars["close"]
     past = close.shift(lookback)
-    signal = (close > past).astype("int64")
-    return pd.Series(signal.values, index=bars.index, dtype="int64", name="signal")
+    signal = (close > past).astype("float64")
+    return pd.Series(signal.values, index=bars.index, dtype="float64", name="signal")
 
 
 def buy_hold(bars: pd.DataFrame) -> pd.Series:
     """Always long from the first bar."""
     return pd.Series(
-        [1] * len(bars), index=bars.index, dtype="int64", name="signal"
+        [1.0] * len(bars), index=bars.index, dtype="float64", name="signal"
     )
 
 

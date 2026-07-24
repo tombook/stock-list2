@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.core.errors import NotFoundError, UpstreamError
-from app.marketdata.models import Bars, Quote
+from app.marketdata.models import Bars, Fundamentals, Quote
 from app.marketdata.sources import yfinance_src
 
 
@@ -21,11 +21,18 @@ class _Source:
     classify: callable  # type: ignore[type-arg]
     quote: callable  # type: ignore[type-arg]
     bars: callable  # type: ignore[type-arg]
+    fundamentals: callable  # type: ignore[type-arg]
 
 
 # Order matters: most-reliable first. yfinance is currently the only wired source.
 _SOURCES: list[_Source] = [
-    _Source(yfinance_src._NAME, yfinance_src.classify, yfinance_src.quote, yfinance_src.bars),
+    _Source(
+        yfinance_src._NAME,
+        yfinance_src.classify,
+        yfinance_src.quote,
+        yfinance_src.bars,
+        yfinance_src.fundamentals,
+    ),
 ]
 
 
@@ -51,3 +58,15 @@ async def bars(symbol: str, timeframe: str, limit: int) -> Bars:
         except UpstreamError as exc:
             failures.append(f"{src.name}: {exc.message}")
     raise NotFoundError(f"no source served bars for {symbol}; {' | '.join(failures)}")
+
+
+async def fundamentals(symbol: str) -> Fundamentals:
+    failures: list[str] = []
+    for src in _SOURCES:
+        try:
+            return await src.fundamentals(symbol)
+        except NotFoundError as exc:
+            failures.append(f"{src.name}: {exc.message}")
+        except UpstreamError as exc:
+            failures.append(f"{src.name}: {exc.message}")
+    raise NotFoundError(f"no source served fundamentals for {symbol}; {' | '.join(failures)}")

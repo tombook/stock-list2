@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from app.marketdata import registry
 from app.marketdata.cache import TTLCache
-from app.marketdata.models import Bars, Quote
+from app.marketdata.models import Bars, Fundamentals, Quote
 
 _quote_cache: TTLCache[Quote] = TTLCache(ttl_seconds=15.0)
 _bars_cache: TTLCache[Bars] = TTLCache(ttl_seconds=60.0)
+_fundamentals_cache: TTLCache[Fundamentals] = TTLCache(ttl_seconds=300.0)
 
 
 async def get_quote(symbol: str) -> Quote:
@@ -32,3 +33,13 @@ async def get_bars(symbol: str, timeframe: str = "1d", limit: int = 120) -> Bars
     bars = await registry.bars(key.split(":")[0], timeframe, limit)
     _bars_cache.set(key, bars)
     return bars
+
+
+async def get_fundamentals(symbol: str) -> Fundamentals:
+    key = symbol.upper()
+    cached = _fundamentals_cache.get(key)
+    if cached is not None:
+        return cached
+    fund = await registry.fundamentals(key)
+    _fundamentals_cache.set(key, fund)
+    return fund

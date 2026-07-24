@@ -37,6 +37,11 @@ async def _get_bars(args: dict[str, Any]) -> dict[str, Any]:
     return bars.model_dump(mode="json")
 
 
+async def _get_fundamentals(args: dict[str, Any]) -> dict[str, Any]:
+    fund = await market_service.get_fundamentals(str(args["symbol"]))
+    return fund.model_dump(mode="json")
+
+
 async def _run_backtest(args: dict[str, Any]) -> dict[str, Any]:
     req = BacktestRequest(
         symbol=str(args["symbol"]),
@@ -79,6 +84,13 @@ _BARS_PARAMS = {
         "timeframe": {"type": "string", "description": "1d, 1wk, 1mo, 1h, 5m", "default": "1d"},
         "limit": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 120},
     },
+    "required": ["symbol"],
+    "additionalProperties": False,
+}
+
+_FUNDAMENTALS_PARAMS = {
+    "type": "object",
+    "properties": {"symbol": {"type": "string", "description": "Ticker, e.g. AAPL, MSFT"}},
     "required": ["symbol"],
     "additionalProperties": False,
 }
@@ -127,6 +139,12 @@ def registry() -> dict[str, Tool]:
             _BARS_PARAMS,
             _get_bars,
         ),
+        "get_fundamentals": Tool(
+            "get_fundamentals",
+            "Get company fundamentals for a market symbol (P/E, market cap, sector, etc.).",
+            _FUNDAMENTALS_PARAMS,
+            _get_fundamentals,
+        ),
         "run_backtest": Tool(
             "run_backtest",
             "Run a backtest of a named strategy on a market symbol and return performance metrics.",
@@ -138,6 +156,13 @@ def registry() -> dict[str, Tool]:
 
 def openai_tools() -> list[dict[str, Any]]:
     return [
-        {"type": "function", "function": {"name": t.name, "description": t.description, "parameters": t.parameters}}
+        {
+            "type": "function",
+            "function": {
+                "name": t.name,
+                "description": t.description,
+                "parameters": t.parameters,
+            },
+        }
         for t in registry().values()
     ]

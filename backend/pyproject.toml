@@ -16,6 +16,7 @@ dependencies = [
     "pandas>=2.2",
     "numpy>=1.26",
     "redis>=5.0",
+    "alembic>=1.18.5",
 ]
 
 [project.optional-dependencies]
@@ -40,6 +41,8 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# Alembic 自动生成的迁移版本文件使用旧式 typing 风格，惯例排除
+exclude = ["migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

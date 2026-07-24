@@ -77,6 +77,28 @@ async def run_backtest(req: BacktestRequest) -> BacktestResponse:
         for ts, eq in zip(df["ts"], result.equity, strict=True)
     ]
 
+    benchmark_equity = None
+    alpha = None
+    if req.benchmark:
+        try:
+            bench_bars = await market_service.get_bars(req.benchmark, req.timeframe, req.limit)
+            bench_df = _to_dataframe(bench_bars)
+            bench_signal = STRATEGIES["buy_hold"].fn(bench_df)
+            bench_result = await asyncio.to_thread(engine.run, bench_df, bench_signal)
+            bench_equity = bench_result.equity.reset_index(drop=True)
+            strat_equity = result.equity.reset_index(drop=True)
+            min_len = min(len(bench_equity), len(strat_equity))
+            benchmark_equity = [
+                EquityPoint(
+                    ts=ts.to_pydatetime() if hasattr(ts, "to_pydatetime") else ts,
+                    equity=float(eq),
+                )
+                for ts, eq in zip(bench_df["ts"][:min_len], bench_equity[:min_len], strict=True)
+            ]
+            alpha = float(strat_equity.iloc[min_len - 1] - bench_equity.iloc[min_len - 1])
+        except Exception:
+            pass  # benchmark 获取失败时不阻断主回测结果
+
     return BacktestResponse(
         symbol=bars.symbol,
         strategy=req.strategy,
@@ -86,4 +108,6 @@ async def run_backtest(req: BacktestRequest) -> BacktestResponse:
         end=bars.bars[-1].ts,
         metrics=m,
         equity=equity_points,
+        benchmark_equity=benchmark_equity,
+        alpha=alpha,
     )
