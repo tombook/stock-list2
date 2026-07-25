@@ -105,6 +105,17 @@ async def _predict_direction(args: dict[str, Any]) -> dict[str, Any]:
     return result.model_dump(mode="json")
 
 
+async def _detect_pattern(args: dict[str, Any]) -> dict[str, Any]:
+    from app.chart_pattern.service import detect_patterns
+
+    result = await detect_patterns(
+        str(args["symbol"]),
+        str(args.get("timeframe") or "1d"),
+        int(args.get("limit") or 60),
+    )
+    return result
+
+
 async def _run_backtest(args: dict[str, Any]) -> dict[str, Any]:
     req = BacktestRequest(
         symbol=str(args["symbol"]),
@@ -204,6 +215,17 @@ _PREDICT_PARAMS = {
     "additionalProperties": False,
 }
 
+_PATTERN_PARAMS = {
+    "type": "object",
+    "properties": {
+        "symbol": {"type": "string", "description": "Ticker, e.g. AAPL"},
+        "timeframe": {"type": "string", "default": "1d"},
+        "limit": {"type": "integer", "minimum": 20, "maximum": 252, "default": 60},
+    },
+    "required": ["symbol"],
+    "additionalProperties": False,
+}
+
 _BACKTEST_PARAMS = {
     "type": "object",
     "properties": {
@@ -277,6 +299,12 @@ def registry() -> dict[str, Tool]:
             "Predict the probability of price increase using ML (AdaBoost) with feature importance.",
             _PREDICT_PARAMS,
             _predict_direction,
+        ),
+        "detect_pattern": Tool(
+            "detect_pattern",
+            "Detect classic chart patterns (head & shoulders, double top/bottom, triangles, flags, VCP, etc.) via LLM visual analysis of price action.",
+            _PATTERN_PARAMS,
+            _detect_pattern,
         ),
         "run_backtest": Tool(
             "run_backtest",
