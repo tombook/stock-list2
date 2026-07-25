@@ -1,5 +1,17 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { Activity, BarChart3, Bookmark, FlaskConical, History, LineChart, MessageSquare, Moon, Sun } from "lucide-react";;;
+import {
+  Activity,
+  BarChart3,
+  Bookmark,
+  Code,
+  FlaskConical,
+  History,
+  LineChart,
+  MessageSquare,
+  MessagesSquare,
+  Moon,
+  Sun,
+} from "lucide-react";;
 import { useAppStore } from "../../stores/appStore";
 import { cn } from "../../lib/cn";
 
@@ -11,6 +23,8 @@ const nav = [
   { to: "/runs", label: "Runs", icon: History },
   { to: "/watchlist", label: "Watchlist", icon: Bookmark },
   { to: "/trading", label: "Trading", icon: LineChart },
+  { to: "/strategy-editor", label: "Editor", icon: Code },
+  { to: "/debate", label: "Debate", icon: MessagesSquare },
 ];
 
 export function BasicLayout() {

@@ -8,6 +8,8 @@ import { RunsPage } from "./pages/RunsPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
 import { WatchlistPage } from "./pages/WatchlistPage";
 import { TradingPage } from "./pages/TradingPage";
+import { StrategyEditorPage } from "./pages/StrategyEditorPage";
+import { DebatePage } from "./pages/DebatePage";
 
 export function AppRoutes() {
   return (
@@ -21,6 +23,8 @@ export function AppRoutes() {
         <Route path="/runs/:id" element={<RunDetailPage />} />
         <Route path="/watchlist" element={<WatchlistPage />} />
         <Route path="/trading" element={<TradingPage />} />
+        <Route path="/strategy-editor" element={<StrategyEditorPage />} />
+        <Route path="/debate" element={<DebatePage />} />
       </Route>
     </Routes>
   );

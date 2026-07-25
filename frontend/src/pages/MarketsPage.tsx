@@ -6,6 +6,7 @@ import { Input } from "../components/ui/Input";
 import { PriceChart } from "../components/charts/PriceChart";
 import { RSIPanel } from "../components/charts/RSIPanel";
 import { MACDPanel } from "../components/charts/MACDPanel";
+import { useQuotesWS } from "../hooks/useQuotesWS";
 
 export function MarketsPage() {
   const { symbol, quote, bars, loading, error, lookup } = useMarketStore();
@@ -13,6 +14,8 @@ export function MarketsPage() {
   const [smaPeriods, setSmaPeriods] = useState<number[]>([]);
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
+  const { quotes: wsQuotes, connected } = useQuotesWS([symbol]);
+  const liveQuote = wsQuotes[symbol.toUpperCase()];
 
   useEffect(() => {
     lookup(symbol);
@@ -63,7 +66,18 @@ export function MarketsPage() {
               </div>
             )}
           </div>
-          <div className="mt-1 text-xs text-slate-400">source: {quote.source}</div>
+          <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+            <span>source: {quote.source}</span>
+            {connected && (
+              <span className="flex items-center gap-1 text-emerald-600">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                live
+              </span>
+            )}
+            {liveQuote?.price && liveQuote.price !== quote.price && (
+              <span className="text-amber-600">ws: {liveQuote.price.toFixed(2)}</span>
+            )}
+          </div>
         </Card>
       )}
 
