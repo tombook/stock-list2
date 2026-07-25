@@ -13,8 +13,13 @@ class OrderRequest(BaseModel):
     symbol: str = Field(min_length=1, max_length=16)
     side: str = Field(pattern="^(buy|sell)$")
     qty: float = Field(gt=0)
-    order_type: str = Field(default="market", pattern="^(market|limit)$")
+    order_type: str = Field(
+        default="market",
+        pattern="^(market|limit|stop|stop_limit|trailing_stop)$",
+    )
     limit_price: float | None = None
+    stop_price: float | None = None
+    trail_amount: float | None = None
 
 
 class OrderOut(BaseModel):
@@ -26,6 +31,8 @@ class OrderOut(BaseModel):
     qty: float
     order_type: str
     limit_price: float | None
+    stop_price: float | None
+    trail_amount: float | None
     status: str
     filled_price: float | None
     filled_at: datetime | None

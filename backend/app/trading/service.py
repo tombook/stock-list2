@@ -1,8 +1,11 @@
 """Trading service — order matching + fill simulation + position/cash updates.
 
-Market orders: filled immediately at current quote price.
-Limit orders: stored as pending; checked against current price for fill.
-Position update uses weighted average cost on buy, FIFO on sell.
+Supported order types:
+  - market: filled immediately at current quote price
+  - limit: pending until market price crosses limit_price
+  - stop: pending until price hits stop_price, then fills as market
+  - stop_limit: pending until stop_price, then converts to limit order
+  - trailing_stop: dynamic stop that follows price; trail_amount is $ or %
 """
 
 from __future__ import annotations
@@ -26,8 +29,7 @@ async def place_order(session: AsyncSession, req: OrderRequest) -> Order:
     account = await get_account(session)
     symbol = req.symbol.upper()
 
-    if req.order_type == "limit" and req.limit_price is None:
-        raise DomainError("limit order requires limit_price")
+    _validate_request(req)
 
     order = await repo.create_order(
         session,
@@ -37,15 +39,27 @@ async def place_order(session: AsyncSession, req: OrderRequest) -> Order:
         qty=req.qty,
         order_type=req.order_type,
         limit_price=req.limit_price,
+        stop_price=req.stop_price,
+        trail_amount=req.trail_amount,
         status="pending",
     )
 
     if req.order_type == "market":
         await _try_fill(session, account, order)
-    elif req.order_type == "limit":
-        await _check_limit_fill(session, account, order)
+    else:
+        await _check_pending_fill(session, account, order)
 
     return order
+
+
+def _validate_request(req: OrderRequest) -> None:
+    ot = req.order_type
+    if ot in ("limit", "stop_limit") and req.limit_price is None:
+        raise DomainError(f"{ot} order requires limit_price")
+    if ot in ("stop", "stop_limit") and req.stop_price is None:
+        raise DomainError(f"{ot} order requires stop_price")
+    if ot == "trailing_stop" and req.trail_amount is None:
+        raise DomainError("trailing_stop order requires trail_amount")
 
 
 async def cancel_order(session: AsyncSession, order_id: int) -> Order:
@@ -68,7 +82,7 @@ async def check_pending_orders(session: AsyncSession) -> int:
     filled = 0
     for order in pending:
         account = await session.get(Account, order.account_id)
-        if account and await _check_limit_fill(session, account, order):
+        if account and await _check_pending_fill(session, account, order):
             filled += 1
     return filled
 
@@ -79,23 +93,77 @@ async def _try_fill(session: AsyncSession, account: Account, order: Order) -> bo
     except Exception:
         return False
 
-    fill_price = quote.price
+    price = quote.price
+
+    if order.order_type == "market":
+        await _apply_fill(session, account, order, price)
+        return True
+
     if order.order_type == "limit":
-        if not _limit_crossed(order, fill_price):
-            return False
+        if _limit_crossed(order, price):
+            await _apply_fill(session, account, order, price)
+            return True
+        return False
 
-    await _apply_fill(session, account, order, fill_price)
-    return True
+    if order.order_type == "stop":
+        if _stop_triggered(order, price):
+            await _apply_fill(session, account, order, price)
+            return True
+        return False
+
+    if order.order_type == "stop_limit":
+        if _stop_triggered(order, price):
+            order.order_type = "limit"
+            if _limit_crossed(order, price):
+                await _apply_fill(session, account, order, price)
+                return True
+        return False
+
+    if order.order_type == "trailing_stop":
+        return await _check_trailing_stop(session, account, order, price)
+
+    return False
 
 
-async def _check_limit_fill(session: AsyncSession, account: Account, order: Order) -> bool:
+async def _check_pending_fill(
+    session: AsyncSession, account: Account, order: Order
+) -> bool:
     return await _try_fill(session, account, order)
+
+
+async def _check_trailing_stop(
+    session: AsyncSession, account: Account, order: Order, price: float
+) -> bool:
+    if order.trail_high_water is None:
+        order.trail_high_water = price
+    elif price > order.trail_high_water:
+        order.trail_high_water = price
+
+    trail = order.trail_amount or 0
+    if trail < 1:
+        threshold = order.trail_high_water * (1 - trail)
+    else:
+        threshold = order.trail_high_water - trail
+
+    triggered = order.side == "sell" and price <= threshold
+    if triggered:
+        await _apply_fill(session, account, order, price)
+        return True
+    await session.flush()
+    return False
 
 
 def _limit_crossed(order: Order, price: float) -> bool:
     if order.side == "buy":
         return price <= (order.limit_price or 0)
     return price >= (order.limit_price or float("inf"))
+
+
+def _stop_triggered(order: Order, price: float) -> bool:
+    sp = order.stop_price or 0
+    if order.side == "buy":
+        return price >= sp
+    return price <= sp
 
 
 async def _apply_fill(session: AsyncSession, account: Account, order: Order, price: float) -> None:

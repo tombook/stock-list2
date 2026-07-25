@@ -124,3 +124,66 @@ async def test_cancel_pending_order(api_client: AsyncClient) -> None:
     resp = await api_client.delete(f"/api/trading/orders/{order_id}")
     assert resp.status_code == 200
     assert resp.json()["status"] == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_stop_order_triggers_when_price_hits(api_client: AsyncClient) -> None:
+    with patch(
+        "app.trading.service.market_service.get_quote",
+        new=AsyncMock(return_value=_fake_quote("AAPL", 150.0)),
+    ):
+        await api_client.post(
+            "/api/trading/orders",
+            json={"symbol": "AAPL", "side": "buy", "qty": 10, "order_type": "market"},
+        )
+    with patch(
+        "app.trading.service.market_service.get_quote",
+        new=AsyncMock(return_value=_fake_quote("AAPL", 140.0)),
+    ):
+        resp = await api_client.post(
+            "/api/trading/orders",
+            json={"symbol": "AAPL", "side": "sell", "qty": 10,
+                  "order_type": "stop", "stop_price": 145.0},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "filled"
+
+
+@pytest.mark.asyncio
+async def test_stop_order_stays_pending_above_stop(api_client: AsyncClient) -> None:
+    with patch(
+        "app.trading.service.market_service.get_quote",
+        new=AsyncMock(return_value=_fake_quote("AAPL", 150.0)),
+    ):
+        resp = await api_client.post(
+            "/api/trading/orders",
+            json={"symbol": "AAPL", "side": "sell", "qty": 10,
+                  "order_type": "stop", "stop_price": 140.0},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "pending"
+
+
+@pytest.mark.asyncio
+async def test_trailing_stop_tracks_high_water(api_client: AsyncClient) -> None:
+    with patch(
+        "app.trading.service.market_service.get_quote",
+        new=AsyncMock(return_value=_fake_quote("AAPL", 150.0)),
+    ):
+        resp = await api_client.post(
+            "/api/trading/orders",
+            json={"symbol": "AAPL", "side": "sell", "qty": 10,
+                  "order_type": "trailing_stop", "trail_amount": 5.0},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "pending"
+    assert resp.json()["trail_amount"] == 5.0
+
+
+@pytest.mark.asyncio
+async def test_stop_requires_stop_price(api_client: AsyncClient) -> None:
+    resp = await api_client.post(
+        "/api/trading/orders",
+        json={"symbol": "AAPL", "side": "buy", "qty": 10, "order_type": "stop"},
+    )
+    assert resp.status_code == 400

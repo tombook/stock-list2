@@ -30,15 +30,22 @@ class Order(Base):
     __tablename__ = "trading_orders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    account_id: Mapped[int] = mapped_column(Integer, ForeignKey("trading_accounts.id"), index=True)
+    account_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("trading_accounts.id"), index=True
+    )
     symbol: Mapped[str] = mapped_column(String(16), index=True)
     side: Mapped[str] = mapped_column(String(4))  # "buy" or "sell"
     qty: Mapped[float] = mapped_column(Float)
-    order_type: Mapped[str] = mapped_column(String(8))  # "market" or "limit"
+    order_type: Mapped[str] = mapped_column(String(16))
     limit_price: Mapped[float | None] = mapped_column(Float, default=None)
+    stop_price: Mapped[float | None] = mapped_column(Float, default=None)
+    trail_amount: Mapped[float | None] = mapped_column(Float, default=None)
+    trail_high_water: Mapped[float | None] = mapped_column(Float, default=None)
     status: Mapped[str] = mapped_column(String(10), default="pending", index=True)
     filled_price: Mapped[float | None] = mapped_column(Float, default=None)
-    filled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    filled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), init=False
     )

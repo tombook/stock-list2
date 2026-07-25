@@ -7,6 +7,7 @@ import { BacktestPage } from "./pages/BacktestPage";
 import { RunsPage } from "./pages/RunsPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
 import { WatchlistPage } from "./pages/WatchlistPage";
+import { TradingPage } from "./pages/TradingPage";
 
 export function AppRoutes() {
   return (
@@ -19,6 +20,7 @@ export function AppRoutes() {
         <Route path="/runs" element={<RunsPage />} />
         <Route path="/runs/:id" element={<RunDetailPage />} />
         <Route path="/watchlist" element={<WatchlistPage />} />
+        <Route path="/trading" element={<TradingPage />} />
       </Route>
     </Routes>
   );

@@ -15,7 +15,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.backtest.optimizer import run_optimize
-from app.backtest.schemas import BacktestRequest, BacktestResponse, OptimizeRequest, OptimizeResult
+from app.backtest.portfolio_engine import run_portfolio_backtest
+from app.backtest.portfolio_schemas import (
+    PortfolioBacktestRequest,
+    PortfolioBacktestResponse,
+)
+from app.backtest.schemas import (
+    BacktestRequest,
+    BacktestResponse,
+    OptimizeRequest,
+    OptimizeResult,
+)
 from app.backtest.service import run_backtest
 from app.core.db import get_session
 from app.core.logging import get_logger
@@ -45,3 +55,8 @@ async def backtest(
 @router.post("/backtest/optimize", response_model=OptimizeResult)
 async def optimize(req: OptimizeRequest) -> OptimizeResult:
     return await run_optimize(req)
+
+
+@router.post("/backtest/portfolio", response_model=PortfolioBacktestResponse)
+async def portfolio_backtest(req: PortfolioBacktestRequest) -> PortfolioBacktestResponse:
+    return await run_portfolio_backtest(req)
