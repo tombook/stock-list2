@@ -22,6 +22,7 @@ from app.marketdata.bar_cache import BarCache as _bar_cache_model  # noqa: F401
 from app.trading.models import Account as _trading_account  # noqa: F401
 from app.trading.models import Order as _trading_order  # noqa: F401
 from app.trading.models import Position as _trading_position  # noqa: F401
+from app.knowledge.models import KnowledgeChunk as _knowledge_chunk  # noqa: F401
 
 config = context.config
 

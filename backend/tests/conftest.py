@@ -51,6 +51,7 @@ async def _reset_engine() -> AsyncIterator[None]:
                 await cleanup.execute(text("DELETE FROM trading_orders"))
                 await cleanup.execute(text("DELETE FROM trading_positions"))
                 await cleanup.execute(text("DELETE FROM trading_accounts"))
+                await cleanup.execute(text("DELETE FROM knowledge_chunks"))
                 await cleanup.commit()
         except SQLAlchemyError:
             pass  # tables may not exist (e.g. pure unit tests)
@@ -79,6 +80,7 @@ async def db_session(_reset_engine: None) -> AsyncIterator[AsyncSession]:
         await cleanup.execute(text("DELETE FROM trading_orders"))
         await cleanup.execute(text("DELETE FROM trading_positions"))
         await cleanup.execute(text("DELETE FROM trading_accounts"))
+        await cleanup.execute(text("DELETE FROM knowledge_chunks"))
         await cleanup.commit()
 
 

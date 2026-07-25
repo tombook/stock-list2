@@ -52,3 +52,10 @@ async def analyze_deep_endpoint(req: AnalyzeRequest) -> dict:
     from app.agent.analysts.framework import analyze_deep
 
     return await analyze_deep(req.prompt)
+
+
+@router.post("/analyze/debate")
+async def analyze_debate_endpoint(req: AnalyzeRequest) -> dict:
+    from app.agent.analysts.debate import run_debate
+
+    return await run_debate(req.prompt, rounds=2)
