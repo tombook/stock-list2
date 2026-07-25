@@ -96,6 +96,15 @@ async def _get_sentiment(args: dict[str, Any]) -> dict[str, Any]:
     return result.model_dump(mode="json")
 
 
+async def _predict_direction(args: dict[str, Any]) -> dict[str, Any]:
+    from app.ml.service import predict_direction
+
+    result = await predict_direction(
+        str(args["symbol"]), int(args.get("horizon") or 5)
+    )
+    return result.model_dump(mode="json")
+
+
 async def _run_backtest(args: dict[str, Any]) -> dict[str, Any]:
     req = BacktestRequest(
         symbol=str(args["symbol"]),
@@ -185,6 +194,16 @@ _SCREEN_PARAMS = {
     "additionalProperties": False,
 }
 
+_PREDICT_PARAMS = {
+    "type": "object",
+    "properties": {
+        "symbol": {"type": "string", "description": "Ticker, e.g. AAPL"},
+        "horizon": {"type": "integer", "minimum": 1, "maximum": 30, "default": 5},
+    },
+    "required": ["symbol"],
+    "additionalProperties": False,
+}
+
 _BACKTEST_PARAMS = {
     "type": "object",
     "properties": {
@@ -252,6 +271,12 @@ def registry() -> dict[str, Tool]:
             "Get market sentiment for a symbol based on recent news headlines.",
             _QUOTE_PARAMS,
             _get_sentiment,
+        ),
+        "predict_direction": Tool(
+            "predict_direction",
+            "Predict the probability of price increase using ML (AdaBoost) with feature importance.",
+            _PREDICT_PARAMS,
+            _predict_direction,
         ),
         "run_backtest": Tool(
             "run_backtest",

@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agent, backtest, health, market, runs, screener, watchlist
+from app.api import agent, backtest, health, market, runs, screener, trading, watchlist
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.settings import get_settings
@@ -41,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(runs.router)
     app.include_router(watchlist.router)
     app.include_router(screener.router)
+    app.include_router(trading.router)
     return app
 
 

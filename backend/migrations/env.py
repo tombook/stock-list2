@@ -18,7 +18,10 @@ from app.core.db import Base  # 导入应用唯一的 Declarative 基类
 from app.core.settings import get_settings
 from app.runs import models as _runs_models  # noqa: F401 — 注册 runs 表到 metadata
 from app.watchlist import models as _watchlist_models  # noqa: F401 — 注册 watchlist 表
-from app.marketdata.bar_cache import BarCache as _bar_cache_model  # noqa: F401 — 注册 bars_cache 表
+from app.marketdata.bar_cache import BarCache as _bar_cache_model  # noqa: F401
+from app.trading.models import Account as _trading_account  # noqa: F401
+from app.trading.models import Order as _trading_order  # noqa: F401
+from app.trading.models import Position as _trading_position  # noqa: F401
 
 config = context.config
 

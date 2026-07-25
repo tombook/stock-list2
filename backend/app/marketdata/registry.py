@@ -2,8 +2,7 @@
 
 The chain is tried in order; the first source that classifies the symbol AND
 succeeds wins. Failures (NotFoundError / UpstreamError) fall through to the next.
-Add new sources (akshare for A-shares, ccxt for crypto) by implementing the
-DataSource protocol and appending here.
+Alpaca is prepended when API keys are configured; yfinance is always the fallback.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ from dataclasses import dataclass
 
 from app.core.errors import NotFoundError, UpstreamError
 from app.marketdata.models import Bars, CorporateAction, Fundamentals, Quote
-from app.marketdata.sources import yfinance_src
+from app.marketdata.sources import alpaca_src, yfinance_src
 
 
 @dataclass(frozen=True)
@@ -25,17 +24,33 @@ class _Source:
     actions: callable  # type: ignore[type-arg]
 
 
-# Order matters: most-reliable first. yfinance is currently the only wired source.
-_SOURCES: list[_Source] = [
-    _Source(
-        yfinance_src._NAME,
-        yfinance_src.classify,
-        yfinance_src.quote,
-        yfinance_src.bars,
-        yfinance_src.fundamentals,
-        yfinance_src.actions,
-    ),
-]
+def _build_sources() -> list[_Source]:
+    sources: list[_Source] = []
+    if alpaca_src.is_configured():
+        sources.append(
+            _Source(
+                alpaca_src._NAME,
+                alpaca_src.classify,
+                alpaca_src.quote,
+                alpaca_src.bars,
+                alpaca_src.fundamentals,
+                alpaca_src.actions,
+            )
+        )
+    sources.append(
+        _Source(
+            yfinance_src._NAME,
+            yfinance_src.classify,
+            yfinance_src.quote,
+            yfinance_src.bars,
+            yfinance_src.fundamentals,
+            yfinance_src.actions,
+        )
+    )
+    return sources
+
+
+_SOURCES: list[_Source] = _build_sources()
 
 
 async def quote(symbol: str) -> Quote:

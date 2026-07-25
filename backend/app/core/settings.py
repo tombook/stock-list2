@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     llm_timeout: float = 60.0
     agent_max_iterations: int = 8
 
+    # Alpaca (optional — for real-time data + paper trading)
+    alpaca_api_key: str = ""
+    alpaca_secret_key: str = ""
+
     @property
     def db_dsn(self) -> str:
         from urllib.parse import quote_plus

@@ -17,6 +17,7 @@ dependencies = [
     "numpy>=1.26",
     "redis>=5.0",
     "alembic>=1.18.5",
+    "scikit-learn>=1.9.0",
 ]
 
 [project.optional-dependencies]

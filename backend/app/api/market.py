@@ -40,3 +40,13 @@ async def get_sentiment(symbol: str) -> dict:
 
     result = await analyze_sentiment(symbol)
     return result.model_dump(mode="json")
+
+
+@router.get("/predict/{symbol}")
+async def get_prediction(
+    symbol: str, horizon: int = Query(5, ge=1, le=30)
+) -> dict:
+    from app.ml.service import predict_direction
+
+    result = await predict_direction(symbol, horizon)
+    return result.model_dump(mode="json")
