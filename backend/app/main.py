@@ -5,12 +5,28 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agent, backtest, health, knowledge, market, patterns, risk, runs, screener, strategies, trading, watchlist, ws
+from app.api import (
+    agent,
+    backtest,
+    health,
+    knowledge,
+    market,
+    patterns,
+    risk,
+    runs,
+    screener,
+    strategies,
+    trading,
+    watchlist,
+    ws,
+)
+from app.core.auth import require_api_key
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
+from app.core.metrics import PrometheusMiddleware, metrics_response
 from app.core.settings import get_settings
 
 
@@ -34,19 +50,29 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
+    app.add_middleware(PrometheusMiddleware)
+
+    # /health and /metrics are unauthenticated (infrastructure endpoints).
     app.include_router(health.router)
-    app.include_router(market.router)
-    app.include_router(agent.router)
-    app.include_router(backtest.router)
-    app.include_router(runs.router)
-    app.include_router(watchlist.router)
-    app.include_router(screener.router)
-    app.include_router(trading.router)
-    app.include_router(risk.router)
-    app.include_router(knowledge.router)
-    app.include_router(strategies.router)
-    app.include_router(patterns.router)
-    app.include_router(ws.router)
+
+    @app.get("/metrics", include_in_schema=False)
+    async def metrics() -> Response:
+        return metrics_response()  # type: ignore[return-value]
+
+    # All other API routes require API key when settings.api_key is set.
+    api_deps = [Depends(require_api_key)]
+    app.include_router(market.router, dependencies=api_deps)
+    app.include_router(agent.router, dependencies=api_deps)
+    app.include_router(backtest.router, dependencies=api_deps)
+    app.include_router(runs.router, dependencies=api_deps)
+    app.include_router(watchlist.router, dependencies=api_deps)
+    app.include_router(screener.router, dependencies=api_deps)
+    app.include_router(trading.router, dependencies=api_deps)
+    app.include_router(risk.router, dependencies=api_deps)
+    app.include_router(knowledge.router, dependencies=api_deps)
+    app.include_router(strategies.router, dependencies=api_deps)
+    app.include_router(patterns.router, dependencies=api_deps)
+    app.include_router(ws.router, dependencies=api_deps)
     return app
 
 

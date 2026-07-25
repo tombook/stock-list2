@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.vite/
+*.log
+.git/
+.gitignore
+tests/
+docs/
+../.playwright-mcp/
+../markets-chart.png
+*.md
+.vitest-cache/
+coverage/

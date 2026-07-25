@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # Redis is a soft dependency — the app runs without it.
     redis_url: str | None = "redis://localhost:6379/0"
 
+    # API auth: when set, all API routes require X-API-Key header.
+    # Empty value disables auth (dev mode only).
+    api_key: str = ""
+
     # CORS: comma-separated origins; empty == allow all (dev default).
     cors_origins: str = ""
 

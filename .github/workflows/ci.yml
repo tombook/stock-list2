@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v0.2-backtester]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (lint + test)
+    runs-on: ubuntu-latest
+    defaults:
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: stocklist2_test
+        DB_USER: postgres
+        DB_PASS: postgres
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: stocklist2_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: cd backend && uv sync --extra dev
+      - name: Lint
+        run: cd backend && uv run ruff check app tests
+      - name: Run migrations
+        run: cd backend && uv run alembic upgrade head
+      - name: Test
+        run: cd backend && uv run pytest -q
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: stocklist2_test
+          DB_USER: postgres
+          DB_PASS: postgres
+
+  frontend:
+    name: Frontend (type-check + test + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci
+      - run: cd frontend && npx tsc --noEmit
+      - run: cd frontend && npx vitest run
+      - run: cd frontend && npx vite build
+
+  lint:
+    name: Ruff (all files)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: arduino/setup-protoc@v2
+        with:
+          version: "3.21.9"
+      - run: pip install ruff
+      - run: ruff check backend/app backend/tests
